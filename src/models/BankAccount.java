@@ -1,5 +1,7 @@
 package models;
 
+// import java.util.ArrayList;
+
 import java.util.ArrayList;
 
 public abstract class BankAccount {
@@ -38,16 +40,12 @@ public abstract class BankAccount {
         this.username = username;
     }
 
-    public abstract void withdraw(float amount) throws  Exception;
-    public abstract void deposit();
+    public abstract void deposit(float amount);
+    public abstract void withdraw(float amount) throws Exception;
 
-    // add the operation to operations list
-    public void addOperation(String type, float amount) {
-        Operation op = new Operation(type, amount);
+    public void addOperation(Operation op) {
         operations.add(op);
     }
-
-    // show all the operations
     public void showOperations() {
         if (operations.isEmpty()) {
             System.out.println("No operations yet.");
