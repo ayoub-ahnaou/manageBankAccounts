@@ -31,6 +31,7 @@ public class SavingAccount extends BankAccount {
         long weeksPassed = ChronoUnit.WEEKS.between(lastInterestDate, LocalDate.now());
         if (weeksPassed >= 1) {
             applyInterest();
+            lastInterestDate = LocalDate.now();
         }
     }
 
