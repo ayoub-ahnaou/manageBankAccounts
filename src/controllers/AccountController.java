@@ -1,159 +1,195 @@
 package controllers;
 
-import models.BankAccount;
-import models.CurrentAccount;
-import models.SavingAccount;
+import models.*;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Scanner;
 
 public class AccountController {
-    private final Map<String, BankAccount> accounts = new HashMap<>();
-    Scanner scanner = new Scanner(System.in);
-    static int nextId = 1000;
+    private Map<String, BankAccount> accounts = new HashMap<>();
+    private Scanner scanner = new Scanner(System.in);
 
-    // create a new account either saving or current
-    public void createAccount() {
-        int accountType;
-        BankAccount account;
+    // create either saving or current account
+    public void createSavingAccount(String code, String username, float sold, float interestRate) {
+        BankAccount acc = new SavingAccount(code, username, sold, interestRate);
+        accounts.put(code, acc);
+        System.out.println("Saving account created: " + code);
+    }
 
-        System.out.println("1- Saving account");
-        System.out.println("2- Current account");
-        System.out.print("Choose an account type: ");
-        accountType = Integer.parseInt(scanner.nextLine());
+    public void createCurrentAccount(String code, String username, float sold, float overdraft) {
+        BankAccount acc = new CurrentAccount(code, username, sold, overdraft);
+        accounts.put(code, acc);
+        System.out.println("Current account created: " + code);
+    }
 
-        System.out.print("Enter your full name: ");
-        String username = scanner.nextLine();
-
-        System.out.print("Enter you initial amount: ");
-        float sold = Float.parseFloat(scanner.nextLine());
-
-        // concat the code with the CPT prefix
-        String code = "CPT-" + nextId;
-        if(accountType == 1) {
-            account = new SavingAccount(code, username, sold, 0.05F); // overdraft limit 300
-        } else if (accountType == 2) {
-            account = new CurrentAccount(code, username, sold, 300); // interest 5%
+    // make a deposit operation
+    public void performDeposit(String accountId, float amount) throws Exception {
+        BankAccount acc = accounts.get(accountId);
+        if (acc != null) {
+            Operation op = new Deposit(amount);
+            op.apply(acc);
+            System.out.println("Deposit successful.");
         } else {
-            throw new IllegalArgumentException("Invalid type account");
-        }
-        accounts.put(code, account);
-        System.out.println("account created with success under code " + code);
-        nextId++;
-    }
-
-    // deposit into account
-    public void deposit() {
-        try {
-            System.out.print("Enter your account id (CPT-XXXX): ");
-            String accountId = scanner.nextLine();
-
-            System.out.print("Enter amount to be deposited: ");
-            float amount = Float.parseFloat(scanner.nextLine());
-
-            BankAccount account = accounts.get(accountId);
-            if(account == null) {
-                System.out.println("Account didn't exist.");
-                return;
-            }
-
-            account.setSold(account.getSold() + amount);
-            System.out.println("Deposit made with success");
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter numbers only.");
-        } catch (Exception e) {
-            System.out.println("Unexpected error: " + e.getMessage());
+            System.out.println("Account not found.");
         }
     }
 
-    // withdraw from account
-    public void withdraw() {
-        try {
-            System.out.print("Enter your account id (CPT-XXXX): ");
-            String accountId = scanner.nextLine();
-
-            System.out.print("Enter amount to withdraw: ");
-            float amount = Float.parseFloat(scanner.nextLine());
-
-            BankAccount account = accounts.get(accountId);
-            if(account == null) {
-                System.out.println("Account didn't exist.");
-                return;
+    // make a withdrawal operation
+    public void performWithdrawal(String accountId, float amount) {
+        BankAccount acc = accounts.get(accountId);
+        if (acc != null) {
+            try {
+                Operation op = new Withdrawal(amount);
+                op.apply(acc);
+                System.out.println("Withdrawal successful.");
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
-
-            account.withdraw(amount);
-            account.addOperation("Withdraw", amount);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter numbers only.");
-        } catch (Exception e) {
-            System.out.println("Unexpected error: " + e.getMessage());
+        } else {
+            System.out.println("Account not found.");
         }
     }
 
-    // make transfer (using withdraw and deposit methods)
-    public void transfer() {
-        try {
-            System.out.print("Enter your source account id (CPT-XXXX): ");
-            String sourceId = scanner.nextLine();
+    // transfer from account to another
+    public void transfer(String fromId, String toId, float amount) {
+        BankAccount src = accounts.get(fromId);
+        BankAccount dest = accounts.get(toId);
 
-            System.out.print("Enter destination account id (CPT-XXXX): ");
-            String destinationId = scanner.nextLine();
-
-            System.out.print("Enter amount to transfer: ");
-            float amount = Float.parseFloat(scanner.nextLine());
-
-            BankAccount source = accounts.get(sourceId);
-            BankAccount destination = accounts.get(destinationId);
-
-            if (source == null) {
-                System.out.println("Source account does not exist.");
-                return;
-            }
-            if (destination == null) {
-                System.out.println("Destination account does not exist.");
-                return;
-            }
-
-            // Check balance in source account
-            if (source.getSold() >= amount) {
-                // Withdraw from source
-                source.setSold(source.getSold() - amount);
-                // Deposit into destination
-                destination.setSold(destination.getSold() + amount);
-
-                System.out.println("Transfer made with success");
-                System.out.println("New balance of " + sourceId + ": " + source.getSold() + "$");
-                System.out.println("New balance of " + destinationId + ": " + destination.getSold() + "$");
-            } else {
-                System.out.println("Insufficient funds in source account.");
-            }
-
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter numbers only.");
-        } catch (Exception e) {
-            System.out.println("Unexpected error: " + e.getMessage());
-        }
-    }
-
-    // show account details
-    public void showAccountDetails() {
-        System.out.print("Enter your account id: ");
-        String accountId = scanner.nextLine();
-
-        BankAccount account = accounts.get(accountId);
-        if(account == null) {
-            System.out.println("Account didn't exist.");
+        if (src == null || dest == null) {
+            System.out.println("One or both accounts not found.");
             return;
         }
-        System.out.println(account.toString());
+
+        try {
+            src.withdraw(amount);
+            dest.deposit(amount);
+            src.addOperation(new Withdrawal(amount));
+            dest.addOperation(new Deposit(amount));
+            System.out.println("Transfer successful.");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
-    // show all accounts
-    public void showAccounts() {
-        for (Map.Entry<String, BankAccount> entry : accounts.entrySet()) {
-            BankAccount account = entry.getValue();
-            System.out.println(account.toString());
+    // show account details and operations
+    public void showOperations(String accountId) {
+        BankAccount acc = accounts.get(accountId);
+        if (acc != null) {
+            // Show account details
+            System.out.println("===== Account Information =====");
+            System.out.println("Code      : " + acc.getCode());
+            System.out.println("Username  : " + acc.getUsername());
+            System.out.println("Balance   : " + acc.getSold());
+            if (acc instanceof CurrentAccount) {
+                CurrentAccount ca = (CurrentAccount) acc;
+                System.out.println("Overdraft : " + ca.getOverdraftLimit());
+            } else if (acc instanceof SavingAccount) {
+                SavingAccount sa = (SavingAccount) acc;
+                System.out.println("Interest  : " + sa.getInterestRate() + "%");
+            }
+            System.out.println("================================\n");
+
+            acc.showOperations();
+        } else {
+            System.out.println("Account not found.");
         }
+    }
+
+    public void applyInterest(String accountId) {
+        BankAccount acc = accounts.get(accountId);
+
+        if (acc instanceof SavingAccount) {
+            SavingAccount sa = (SavingAccount) acc;
+            sa.applyInterestIfDue();
+        } else if (acc != null) {
+            System.out.println("Interest can only be applied to saving accounts.");
+        } else {
+            System.out.println("Account not found.");
+        }
+    }
+
+    public void start() {
+        int choice;
+        int nextId = 1000;
+        String code, username;
+        float sold, rate, overdraft, amount;
+
+        do {
+            System.out.println("\n===== BANK SYSTEM MENU =====");
+            System.out.println("1. Create Saving Account");
+            System.out.println("2. Create Current Account");
+            System.out.println("3. Deposit");
+            System.out.println("4. Withdraw");
+            System.out.println("5. Transfer");
+            System.out.println("6. Show Account Operations");
+            System.out.println("7. Exit");
+            System.out.print("Enter choice: ");
+
+            try {
+                choice = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                choice = -1; // invalid
+            }
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Username: ");
+                    username = scanner.nextLine();
+                    System.out.print("Initial balance: ");
+                    sold = Float.parseFloat(scanner.nextLine());
+                    System.out.print("Interest rate: ");
+                    rate = Float.parseFloat(scanner.nextLine());
+                    this.createSavingAccount("CPT-" + nextId++, username, sold, rate);
+                    break;
+                case 2:
+                    System.out.print("Username: ");
+                    username = scanner.nextLine();
+                    System.out.print("Initial balance: ");
+                    sold = Float.parseFloat(scanner.nextLine());
+                    System.out.print("Overdraft limit: ");
+                    overdraft = Float.parseFloat(scanner.nextLine());
+                    this.createCurrentAccount("CPT-" + nextId++, username, sold, overdraft);
+                    break;
+                case 3:
+                    try {
+                        System.out.print("Account code: ");
+                        code = scanner.nextLine();
+                        System.out.print("Amount: ");
+                        amount = Float.parseFloat(scanner.nextLine());
+                        this.performDeposit(code, amount);
+                        System.out.println("Deposit successful.");
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+                case 4:
+                    System.out.print("Account code: ");
+                    code = scanner.nextLine();
+                    System.out.print("Amount: ");
+                    amount = Float.parseFloat(scanner.nextLine());
+                    this.performWithdrawal(code, amount);
+                    break;
+                case 5:
+                    System.out.print("Source account code: ");
+                    String from = scanner.nextLine();
+                    System.out.print("Destination account code: ");
+                    String to = scanner.nextLine();
+                    System.out.print("Amount: ");
+                    amount = Float.parseFloat(scanner.nextLine());
+                    this.transfer(from, to, amount);
+                    break;
+                case 6:
+                    System.out.print("Account code: ");
+                    code = scanner.nextLine();
+                    this.showOperations(code);
+                    this.applyInterest(code);
+                    break;
+                case 7: System.out.println("Exiting... Goodbye!"); break;
+                default: System.out.println("Invalid choice. Try again."); break;
+            }
+        } while (choice != 7);
     }
 }
