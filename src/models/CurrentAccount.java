@@ -17,20 +17,18 @@ public class CurrentAccount extends BankAccount {
     }
 
     @Override
-    public void withdraw(float amount) throws Exception {
-        if (getSold() - amount >= -overdraftLimit) {
-            setSold(getSold() - amount);
-            System.out.println("Withdraw successful. New balance: " + getSold());
-        } else {
-            throw new Exception("Overdraft limit exceeded in Current Account.");
-        }
+    public void deposit(float amount) {
+        sold += amount;
+        addOperation(new Deposit(amount));
     }
 
     @Override
-    public void deposit() {}
-
-    @Override
-    public String toString() {
-        return "Current account: " + this.getCode() + ", " + this.getUsername() + ", " + this.getSold() + "$";
+    public void withdraw(float amount) throws Exception {
+        if (sold + overdraftLimit >= amount) {
+            sold -= amount;
+            addOperation(new Withdrawal(amount));
+        } else {
+            throw new Exception("Overdraft limit exceeded!");
+        }
     }
 }
