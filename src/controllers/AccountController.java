@@ -12,8 +12,8 @@ public class AccountController {
     private Scanner scanner = new Scanner(System.in);
 
     // create either saving or current account
-    public void createSavingAccount(String code, String username, float sold, float interestRate) {
-        BankAccount acc = new SavingAccount(code, username, sold, interestRate);
+    public void createSavingAccount(String code, String username, float sold) {
+        BankAccount acc = new SavingAccount(code, username, sold);
         accounts.put(code, acc);
         System.out.println("Saving account created: " + code);
     }
@@ -97,19 +97,6 @@ public class AccountController {
         }
     }
 
-    public void applyInterest(String accountId) {
-        BankAccount acc = accounts.get(accountId);
-
-        if (acc instanceof SavingAccount) {
-            SavingAccount sa = (SavingAccount) acc;
-            sa.applyInterestIfDue();
-        } else if (acc != null) {
-            System.out.println("Interest can only be applied to saving accounts.");
-        } else {
-            System.out.println("Account not found.");
-        }
-    }
-
     public void start() {
         int choice;
         int nextId = 1000;
@@ -140,9 +127,7 @@ public class AccountController {
                     username = scanner.nextLine();
                     System.out.print("Initial balance: ");
                     sold = Float.parseFloat(scanner.nextLine());
-                    System.out.print("Interest rate: ");
-                    rate = Float.parseFloat(scanner.nextLine());
-                    this.createSavingAccount("CPT-" + nextId++, username, sold, rate);
+                    this.createSavingAccount("CPT-" + nextId++, username, sold);
                     break;
                 case 2:
                     System.out.print("Username: ");
@@ -185,7 +170,6 @@ public class AccountController {
                     System.out.print("Account code: ");
                     code = scanner.nextLine();
                     this.showOperations(code);
-                    this.applyInterest(code);
                     break;
                 case 7: System.out.println("Exiting... Goodbye!"); break;
                 default: System.out.println("Invalid choice. Try again."); break;
