@@ -2,14 +2,21 @@ package models;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class SavingAccount extends BankAccount {
-    public float interestRate;
+    public float interestRate = 0.05F;
     public LocalDate lastInterestDate = LocalDate.now();
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);;
 
-    public SavingAccount(String code, String username, float sold, float interestRate) {
+    public SavingAccount(String code, String username, float sold) {
         super(code, username, sold);
-        this.interestRate = interestRate;
+
+        Runnable task = this::applyInterest;
+
+        scheduler.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
     }
 
     public float getInterestRate() {
@@ -21,18 +28,11 @@ public class SavingAccount extends BankAccount {
     }
 
     public void applyInterest() {
-        float interest = sold * (interestRate / 100);
-        sold += interest;
+        float interest = getSold() * (interestRate);
+        setSold(getSold() + interest);
         addOperation(new Deposit(interest));
-        System.out.println("Interest applied: " + interest);
-    }
-
-    public void applyInterestIfDue() {
-        long weeksPassed = ChronoUnit.WEEKS.between(lastInterestDate, LocalDate.now());
-        if (weeksPassed >= 1) {
-            applyInterest();
-            lastInterestDate = LocalDate.now();
-        }
+        lastInterestDate = LocalDate.now();
+        System.out.println("Interest applied: " + interest + ", new sold: " + getSold());
     }
 
     @Override
