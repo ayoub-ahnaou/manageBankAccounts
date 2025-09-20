@@ -7,6 +7,6 @@ public class Deposit extends Operation {
 
     @Override
     public void apply(BankAccount account) {
-        account.setSold(account.getSold() + amount);
+        account.deposit(amount);
     }
 }

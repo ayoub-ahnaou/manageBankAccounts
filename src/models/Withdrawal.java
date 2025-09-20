@@ -7,6 +7,6 @@ public class Withdrawal extends Operation {
 
     @Override
     public void apply(BankAccount account) throws Exception {
-        account.withdraw(amount); // account-specific rule
+        account.withdraw(amount);
     }
 }
